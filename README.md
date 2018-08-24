@@ -4,13 +4,9 @@
 
 BEES is a python program designed to fit ensemble models to experimental SAS by drawing combinations of states from a candidate pool of structures.  This is done using a Bayesian Monte Carlo (BMC) parameter search routine that iteratively increases the number of states per combination, so as to avoid overfitting the data with an arbitrary number of fitting parameters (number of populations).
 
-***
-
 ## Basic Input Parameters
 
 In order to run BEES, you must have two required files: an empirical scattering curve (3-column file: column 1 = q, column 2 = I(q), column 3 = error) and a ZIP archive containing the scattering curves for each of the candidate populations.  Additionally, users may also include auxiliary data (2-column file: column 1 = measurement, column 2 = error in measurement). 
-
-***
 
 ## Example Work Flow
 
