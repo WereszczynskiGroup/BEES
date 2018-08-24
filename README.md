@@ -14,7 +14,7 @@ An example for how BEES might fit in a SAS modeling workflow is as follows:
 
       1b.  Post-process the SAS data to filter spurious data, such as removing low-q beam smearing effects and truncating the high-q region.
       
-      1c.  Calculate the D<sub>max<\sub> value of your molecular system from the empirical data.
+      1c.  Calculate the D<sub>max</sub> value of your molecular system from the empirical data.
   
       1d.  (Optional) Gather an additional set of empirical measurements to use as auxiliary data in the BEES fitting algorithm.
  
