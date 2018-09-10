@@ -1,4 +1,4 @@
-# Bayesian Ensemble Estimator from SAS (BEES)
+# Bayesian Ensemble Estimation from SAS (BEES)
 
 BEES is a python program designed to fit ensemble models to experimental SAS by drawing combinations of states from a candidate pool of structures.  This is done using a Bayesian Monte Carlo (BMC) parameter search routine that iteratively increases the number of states per combination, so as to avoid overfitting the data with an arbitrary number of fitting parameters (number of populations).
 
