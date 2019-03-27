@@ -1,6 +1,6 @@
 # Installation Instructions for BEES
 
- 1. [Download the appropriate Anaconda Python distribution](https://www.anaconda.com/download/)
+ 1. [Download the appropriate Anaconda Python2 distribution](https://www.anaconda.com/download/)
  
  2. After Anaconda is installed, use the `conda` command to download the required Python libraries to run BEES:
     `conda install numpy scipy bokeh mpi4py`
