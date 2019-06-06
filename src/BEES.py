@@ -68,6 +68,10 @@ class ensemble_routine(object):
         mvars.nproc = size
         if mvars.d_max > 0.0:
             mvars.shansamp = True
+        else:
+            mvars.shansamp = False
+
+        
 
     def main(self):
         self.efvars = efvars()
@@ -90,6 +94,33 @@ class ensemble_routine(object):
         Prepare efvars object
         '''
         mvars = self.mvars
+        # Double-check that the user isn't asking for multiple IC's.
+        # Default according to array index, if so.
+        ic_list = np.array([mvars.use_bic,mvars.use_aic,mvars.use_dic,
+                            mvars.use_waic2,mvars.use_waic1],dtype=bool)
+        flagged = np.where(ic_list)[0]
+        #If user did not specify, use BIC
+        if len(flagged) == 0:
+            mvars.use_bic = True
+        elif len(flagged) > 1:
+            mvars.use_bic   = False
+            mvars.use_aic   = False
+            mvars.use_dic   = False
+            mvars.use_waic2 = False
+            mvars.use_waic1 = False
+
+            which_ic = flagged[0]
+            if which_ic==0:
+                mvars.use_bic   = True
+            elif which_ic==1:
+                mvars.use_aic   = True
+            elif which_ic==2:
+                mvars.use_dic   = True
+            elif which_ic==3:
+                mvars.use_waic2 = True
+            elif which_ic==4:
+                mvars.use_waic1 = True
+
         efvars = self.efvars
         if rank == 0:
             
@@ -139,7 +170,10 @@ class ensemble_routine(object):
                 efvars.samples_Q = efvars.Q
                 efvars.samples_I = efvars.I
                 efvars.samples_ERR = efvars.ERR
-                efvars.num_q = len(efvars.Q)
+                if mvars.num_q > 0:
+                    efvars.num_q = mvars.num_q
+                else:
+                    efvars.num_q = len(efvars.Q)
 
             if mvars.auxiliary_data != '':
                 efvars.include_second_dimension = True
@@ -354,7 +388,12 @@ cmd_parser.add_argument("-iter",dest='max_iterations',type=int,help='Number of i
 cmd_parser.add_argument("-burn",dest="posterior_burn",type=int,help='Number of steps to remove from the beginning of each MC trajectory; removes influence of initial random populations from final estimation. (Default = 1000)',default=1000)
 cmd_parser.add_argument("-dmax",dest="d_max",type=float,help='Experimentally-derived D_max value from the SAS profile; used to conduct Shannon sampling.', default=0.0)
 cmd_parser.add_argument("-aux",dest="auxiliary_data",type=str,help='Location of the auxiliary data that will be fit simultaneously with the SAS spectrum.',default='')
-cmd_parser.add_argument("--aic",dest='use_bic',action='store_false',help='Use AIC to evaluate overfitting, instead of the default BIC metric.',default=True)
+cmd_parser.add_argument("-numQ",dest='num_q',type=int,help='User-defined number of independent scattering points.  Value is over-ridden when "-dmax" is non-zero',default=0)
+cmd_parser.add_argument("--aic",dest='use_aic',action='store_true',help='Use AIC to evaluate overfitting.',default=False)
+cmd_parser.add_argument("--bic",dest='use_bic',action='store_true',help='Use BIC to evaluate overfitting. (Recommended)',default=False)
+cmd_parser.add_argument("--dic",dest='use_dic',action='store_true',help='Use DIC to evaluate overfitting.',default=False)
+cmd_parser.add_argument("--waic1",dest='use_waic1',action='store_true',help='Use WAIC to evaluate overfitting, using P1 estimate for number of free parameters (see documentation).',default=False)
+cmd_parser.add_argument("--waic2",dest='use_waic2',action='store_true',help='Use WAIC to evaluate overfitting, using P2 estimate for number of free parameters (see documentation).',default=False)
 cmd_parser.add_argument("--use_all",dest="use_all",action='store_true',help='Fit only the individual candidates and the collection of all candidates (do not conduct iterative scan for overfitting)',default=False)
 cmd_parser.add_argument("--every",dest="every",action='store_true',help='Model populations for every combination of sub-basis sizes (conduct iterative fitting, but ignore overfitting \"STOP\" signal)',default=False)
 cmd_parser.add_argument("-sigma",dest='sigma',type=float,help='Width of the Gaussian distribution used to weighted-random select population iterations. (Default = 0.10)',default=0.10)

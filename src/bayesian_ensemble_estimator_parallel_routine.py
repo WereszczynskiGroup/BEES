@@ -50,6 +50,7 @@ size = comm.Get_size()
 
 
 class module_variables():
+
     def __init__(self, parent=None):
         self.app = app
 
@@ -71,10 +72,11 @@ class efvars():
 
 
 class ensemble_routine(object):
+
     def __init__(self, parent=None):
         pass
 
-    def main(self, mpickle='', efpickle='',mvars=None,efvars=None):
+    def main(self, mpickle='', efpickle='', mvars=None, efvars=None):
         '''
         main method to handle iterative Bayesian MC routine
         '''
@@ -82,15 +84,15 @@ class ensemble_routine(object):
             self.UnpackVariables(mpickle, efpickle)
             self.is_sassie = True
         else:
-            self.mvars  = mvars
+            self.mvars = mvars
             self.efvars = efvars
             self.is_sassie = False
             self.logfile = os.path.join(
-                efvars.log_folder,mvars.runname+'_parallel_routine.log')
+                efvars.log_folder, mvars.runname + '_parallel_routine.log')
         self.EnsembleFit()
         self.Epilogue()
-        os.system('echo \"Rank '+str(rank) +
-                  ' completed all tasks.\" >>'+self.logfile)
+        os.system('echo \"Rank ' + str(rank) +
+                  ' completed all tasks.\" >>' + self.logfile)
         quit()
 
     def UnpackVariables(self, mpickle, efpickle):
@@ -102,7 +104,7 @@ class ensemble_routine(object):
         mvars = self.mvars
         efvars = self.efvars
         self.logfile = os.path.join(
-            efvars.log_folder, mvars.runname+'_parallel_routine.log')
+            efvars.log_folder, mvars.runname + '_parallel_routine.log')
 
         # Fix Boolean -> string bug...
         try:
@@ -130,6 +132,38 @@ class ensemble_routine(object):
             pass
 
         try:
+            if mvars.use_aic.lower() == 'true':
+                mvars.use_aic = True
+            else:
+                mvars.use_aic = False
+        except:
+            pass
+
+        try:
+            if mvars.use_dic.lower() == 'true':
+                mvars.use_dic = True
+            else:
+                mvars.use_dic = False
+        except:
+            pass
+
+        try:
+            if mvars.use_waic1.lower() == 'true':
+                mvars.use_waic1 = True
+            else:
+                mvars.use_waic1 = False
+        except:
+            pass
+
+        try:
+            if mvars.use_waic2.lower() == 'true':
+                mvars.use_waic2 = True
+            else:
+                mvars.use_waic2 = False
+        except:
+            pass
+
+        try:
             if mvars.walk_one.lower() == 'true':
                 mvars.walk_one = True
             else:
@@ -151,19 +185,17 @@ class ensemble_routine(object):
         mvars = self.mvars
         efvars = self.efvars
         if rank == 0:
-            os.system('echo \"In PickleVars.\" >> '+self.logfile)
-
             mvarspickle = os.path.join(
-                efvars.output_folder, mvars.runname+"_mvars.p")
+                efvars.output_folder, mvars.runname + "_mvars.p")
             pickle.dump(mvars, open(mvarspickle, 'wb'))
             os.system('echo \"mvars have been written to pickle: ' +
-                      mvarspickle+'\" >> '+self.logfile)
+                      mvarspickle + '\" >> ' + self.logfile)
 
             efvarspickle = os.path.join(
-                efvars.output_folder, mvars.runname+'_efvars.p')
+                efvars.output_folder, mvars.runname + '_efvars.p')
             pickle.dump(efvars, open(efvarspickle, 'wb'))
             os.system('echo \"efvars have been written to pickle: ' +
-                      efvarspickle+'\" >> '+self.logfile)
+                      efvarspickle + '\" >> ' + self.logfile)
             for thread in range(1, size):
                 comm.send(1, dest=thread)
         else:
@@ -212,9 +244,9 @@ class ensemble_routine(object):
                     as_list = np.array([], dtype=int)
                     for submember in sets[tracker]:
                         as_list = np.append(as_list, submember)
-                    os.system("echo \"Rank "+str(rank)
-                              + ': Working on sub-basis '+str(as_list)
-                              + '\" >> '+self.logfile)
+                    os.system("echo \"Rank " + str(rank)
+                              + ': Working on sub-basis ' + str(as_list)
+                              + '\" >> ' + self.logfile)
                     all_sets_as_list.append(str(as_list))
                     efvars.subspace_dict[str(as_list)] = simulated_basis(
                         self, as_list)
@@ -222,18 +254,18 @@ class ensemble_routine(object):
 
                 # The second boolean is to protect from case of sets < threads
                 if (rank != 0 and rank < np.min([size, self.Nsets])):
-                    os.system('echo \"Rank '+str(rank)
+                    os.system('echo \"Rank ' + str(rank)
                               + ': Sharing sub-basis information'
-                              + ' with head node\" >> '+self.logfile)
+                              + ' with head node\" >> ' + self.logfile)
                     comm.send(efvars.subspace_dict, dest=0)
                     comm.recv(source=0)
-                    os.system('echo \"Rank '+str(rank)
+                    os.system('echo \"Rank ' + str(rank)
                               + ': Received \'continue\' signal'
-                              + ' from head node\" >> '+self.logfile)
+                              + ' from head node\" >> ' + self.logfile)
                 elif (rank >= self.Nsets):
-                    os.system('echo \"Rank '+str(rank)
+                    os.system('echo \"Rank ' + str(rank)
                               + ': Waiting for \'continue\' signal'
-                              + ' from head node\" >> '+self.logfile)
+                              + ' from head node\" >> ' + self.logfile)
                     comm.recv(source=0)
                 else:
                     for thread in range(1, np.min([size, self.Nsets])):
@@ -246,19 +278,20 @@ class ensemble_routine(object):
                               subsize=self.current_subsize)
                 if self.subset_min_aic > self.min_aic:
                     if rank == 0:
-                        os.system('echo \"Best subset of size '+str(subsize)
-                                  + ' is a poorer fit than '+str(subsize-1)
+                        os.system('echo \"Best subset of size ' + str(subsize)
+                                  + ' is a poorer fit than ' + str(subsize - 1)
                                   + ' according to AIC.\"'
-                                  + ' >> '+self.logfile)
+                                  + ' >> ' + self.logfile)
                     if not mvars.every:
                         break
                 else:
                     if rank == 0:
-                        os.system('echo \"Best subset of size '+str(subsize)
-                                  + ' is an improvement over '+str(subsize-1)
+                        os.system('echo \"Best subset of size ' + str(subsize)
+                                  + ' is an improvement over ' +
+                                  str(subsize - 1)
                                   + ' according to AIC.'
                                   + ' Expanding subset size.\"'
-                                  + ' >> '+self.logfile)
+                                  + ' >> ' + self.logfile)
                         self.min_aic = self.subset_min_aic
                         efvars.best_model = self.subset_best_model
                         efvars.best_sas_chi2 = efvars.subspace_dict[str(
@@ -277,15 +310,15 @@ class ensemble_routine(object):
             else:
                 ICstring = 'AIC'
             os.system('echo \"Best model is: '
-                      + str(efvars.best_model)+', '
-                      + ICstring+' = '+str(self.min_aic)+', '
-                      + 'sas_chi2 = '+str(efvars.best_sas_chi2)+', '
-                      + 'aux_chi2 = '+str(efvars.best_aux_chi2)+'\"'
-                      + ' >> '+self.logfile)
-            with file(efvars.status_file, 'r') as old_status:
-                stat_data = old_status.read()
-            with file(efvars.status_file, 'w') as new_status:
-                new_status.write('STATUS\t0.9999\n' + stat_data)
+                      + str(efvars.best_model) + ', '
+                      + ICstring + ' = ' + str(self.min_aic) + ', '
+                      + 'sas_chi2 = ' + str(efvars.best_sas_chi2) + ', '
+                      + 'aux_chi2 = ' + str(efvars.best_aux_chi2) + '\"'
+                      + ' >> ' + self.logfile)
+            #with file(efvars.status_file, 'r') as old_status:
+            #    stat_data = old_status.read()
+            #with file(efvars.status_file, 'w') as new_status:
+            #    new_status.write('STATUS\t0.9999\n' + stat_data)
             if not self.is_sassie:
                 print('STATUS\t0.9999\n')
 
@@ -301,8 +334,9 @@ class ensemble_routine(object):
         '''
         mvars = self.mvars
         efvars = self.efvars
-        os.system('echo \"Finding Individual Fits\" >> '+self.logfile)
         if rank == 0:
+            os.system('echo \"Finding Individual Fits\" >> '+self.logfile)
+            os.system('echo \"There are '+str(efvars.number_of_profiles)+' profiles\" >> '+self.logfile)
             for idx in range(efvars.number_of_profiles):
                 efvars.subspace_dict[str(idx)] = simulated_basis(self, [idx])
                 efvars.subspace_dict[str(idx)].BayesMC()
@@ -310,7 +344,6 @@ class ensemble_routine(object):
                 comm.send(efvars.subspace_dict, dest=thread)
         else:
             efvars.subspace_dict = comm.recv(source=0)
-
         return
 
     def FindBest(self, sublist=np.array([], dtype=str), subsize=None):
@@ -326,7 +359,7 @@ class ensemble_routine(object):
         if len(sublist) == 0:
             if rank == 0:
                 for key in efvars.subspace_dict:
-                    key_AIC = efvars.subspace_dict[key].aic
+                    key_AIC = efvars.subspace_dict[key].ic
                     if key_AIC < self.min_aic:
                         self.min_aic = key_AIC
                         efvars.best_model = key
@@ -344,10 +377,10 @@ class ensemble_routine(object):
         else:
             self.subset_min_aic = 9999999.9
             for key in sublist:
-                key_AIC = efvars.subspace_dict[str(key)].aic
+                key_AIC = efvars.subspace_dict[str(key)].ic
                 if mvars.debug:
-                    os.system('echo \"'+str(key_AIC)+','
-                              + str(self.subset_min_aic)+'\" >> '
+                    os.system('echo \"' + str(key_AIC) + ','
+                              + str(self.subset_min_aic) + '\" >> '
                               + self.logfile)
                 if key_AIC < self.subset_min_aic:
                     self.subset_min_aic = key_AIC
@@ -373,8 +406,8 @@ class ensemble_routine(object):
                     comm.send(self.subset_best_chi, dest=thread)
                 os.system('echo \"Best sub-basis is: '
                           + str(self.subset_best_model)
-                          + ', AIC: '+str(self.subset_min_aic)+'\"'
-                          + ' >> '+self.logfile)
+                          + ', AIC: ' + str(self.subset_min_aic) + '\"'
+                          + ' >> ' + self.logfile)
 
             else:
                 self.subset_min_aic = comm.recv(source=0)
@@ -393,7 +426,7 @@ class ensemble_routine(object):
         if rank == 0:
             print_model = efvars.subspace_dict[efvars.best_model]
             outfile = open(os.path.join(efvars.output_folder,
-                                        mvars.runname+'_final_model.dat'), 'w')
+                                        mvars.runname + '_final_model.dat'), 'w')
             outfile.write(
                 '#ScatterFile avg_weight std_weight lone_sas_chi2 lone_aux_chi2 lone_total_chi2\n')
             if print_model.subset_size > 1:
@@ -414,51 +447,52 @@ class ensemble_routine(object):
                         + '\n')
             else:
                 outfile.write(
-                    efvars.name_array[print_model.subset_members[0]]+'\n')
+                    efvars.name_array[print_model.subset_members[0]] + '\n')
             outfile.write('SAXS_chi^2  (normalized): '
                           + str(np.around(print_model.sas_chi2, decimals=3))
-                          + ' ('+str(np.around(print_model.sas_chi2 /
-                                               efvars.num_q, decimals=3))+')'
+                          + ' (' + str(np.around(print_model.sas_chi2 /
+                                                 efvars.num_q, decimals=3)) + ')'
                           + '\n')
             if efvars.include_second_dimension:
                 outfile.write('AUX_chi^2   (normalized): '
                               + str(np.around(print_model.aux_chi2, decimals=3))
-                              + ' ('+str(np.around(print_model.aux_chi2 /
-                                                   efvars.num_aux, decimals=3))+')'
+                              + ' (' + str(np.around(print_model.aux_chi2 /
+                                                     efvars.num_aux, decimals=3)) + ')'
                               + '\n')
             else:
                 outfile.write('AUX_chi^2   (normalized): 0.000 (0.000)\n')
             outfile.write('Total_chi^2 (normalized): '
                           + str(np.around(print_model.total_chi2, decimals=3))
-                          + ' ('+str(np.around(print_model.total_chi2 /
-                                               efvars.num_points, decimals=3))+')'
+                          + ' (' + str(np.around(print_model.total_chi2 /
+                                                 efvars.num_points, decimals=3)) + ')'
                           + '\n')
             if not mvars.use_bic:
                 outfile.write('AIC                     : '
-                              + str(np.around(print_model.aic, decimals=3))
+                              + str(np.around(print_model.ic, decimals=3))
                               + '\n')
             else:
                 outfile.write('BIC                     : '
-                              + str(np.around(print_model.aic, decimals=3))
+                              + str(np.around(print_model.ic, decimals=3))
                               + '\n')
             outfile.close()
 
             SAS_ensemble = efvars.subspace_dict[efvars.best_model].ensemble_I
             ensemblefile = os.path.join(efvars.output_folder,
-                                        mvars.runname+'_ensemble_sas.int')
+                                        mvars.runname + '_ensemble_sas.int')
             ofile = open(ensemblefile, 'w')
             for qidx in range(len(efvars.Q)):
-                ofile.write(str(efvars.Q[qidx])+'\t'
-                            + str(SAS_ensemble[qidx])+'\n')
+                ofile.write(str(efvars.Q[qidx]) + '\t'
+                            + str(SAS_ensemble[qidx]) + '\n')
             ofile.close()
 
             if efvars.include_second_dimension:
-                extra_ensemble = efvars.subspace_dict[efvars.best_model].ensemble_aux
+                extra_ensemble = efvars.subspace_dict[
+                    efvars.best_model].ensemble_aux
                 extrafile = os.path.join(
-                    efvars.output_folder, mvars.runname+'_ensemble_aux.dat')
+                    efvars.output_folder, mvars.runname + '_ensemble_aux.dat')
                 ofile2 = open(extrafile, 'w')
                 for eidx in range(len(efvars.aux_data)):
-                    ofile2.write(str(extra_ensemble[eidx])+'\n')
+                    ofile2.write(str(extra_ensemble[eidx]) + '\n')
                 ofile2.close()
 
             for thread in range(1, size):
@@ -474,7 +508,7 @@ class ensemble_routine(object):
             self.toc = time.time()
             runtime = self.toc - self.tic
             os.system("echo \"BEES routine complete in " +
-                      str(runtime/3600.)+" hours.\" >> "+self.logfile)
+                      str(runtime / 3600.) + " hours.\" >> " + self.logfile)
         else:
             comm.recv(source=0)
 
@@ -485,7 +519,7 @@ class ensemble_routine(object):
         mvars = self.mvars
         efvars = self.efvars
         efvarspickle = os.path.join(efvars.output_folder,
-                                    mvars.runname+'_efvars_checkpoint.p')
+                                    mvars.runname + '_efvars_checkpoint.p')
         if os.path.isfile(efvarspickle):
             os.remove(efvarspickle)
         pickle.dump(efvars, open(efvarspickle, 'wb'))
@@ -497,21 +531,21 @@ class ensemble_routine(object):
         mvars = self.mvars
 
         try:
-            Ncomplete = self.cumul_sum[self.current_subsize-1]
-            Npercent = (Ncomplete/self.total_combos)
+            Ncomplete = self.cumul_sum[self.current_subsize - 1]
+            Npercent = (Ncomplete / self.total_combos)
         except:
             self.cumul_sum = np.zeros(efvars.number_of_profiles, dtype=int)
-            for idx in range(1, efvars.number_of_profiles+1):
+            for idx in range(1, efvars.number_of_profiles + 1):
                 count = binom(efvars.number_of_profiles, idx)
                 if idx > 1:
-                    self.cumul_sum[idx-1] = self.cumul_sum[idx-2] + count
+                    self.cumul_sum[idx - 1] = self.cumul_sum[idx - 2] + count
                 else:
-                    self.cumul_sum[idx-1] = count
+                    self.cumul_sum[idx - 1] = count
 
             self.total_combos = float(self.cumul_sum[-1]) + 4
 
-            Ncomplete = self.cumul_sum[self.current_subsize-1]
-            Npercent = (Ncomplete/self.total_combos)
+            Ncomplete = self.cumul_sum[self.current_subsize - 1]
+            Npercent = (Ncomplete / self.total_combos)
 
         # Don't let it count backwards if Nperc too low
         if Npercent < 0.0001:
@@ -520,19 +554,19 @@ class ensemble_routine(object):
         if Npercent == 1.0:
             Npercent = 0.99
 
-        with file(efvars.status_file, 'r') as old_status:
-            stat_data = old_status.read()
-        with file(efvars.status_file, 'w') as new_status:
-            new_status.write('STATUS\t'+str(Npercent)+'\n' + stat_data)
+        #with file(efvars.status_file, 'r') as old_status:
+        #    stat_data = old_status.read()
+        #with file(efvars.status_file, 'w') as new_status:
+        #    new_status.write('STATUS\t' + str(Npercent) + '\n' + stat_data)
         if not self.is_sassie:
-            print('STATUS\t'+str(Npercent)+'\n')
+            print('STATUS\t' + str(Npercent) + '\n')
 
         return
 
 
 #######################################################################
 
-########################  Subset MonteCarlo object class  ##########################################
+########################  Subset MonteCarlo object class  ################
 ''' 
     This object is the one that actually does the Monte Carlo for each subset.
     Relevant metrics (Posterior, Convergence, AIC/BIC, etc.) are stored herein.
@@ -550,7 +584,7 @@ class simulated_basis(object):
         self.subset_members = subset_ids
         self.as_string = ''
         for ID in self.subset_members:
-            self.as_string = self.as_string+'_'+str(ID)
+            self.as_string = self.as_string + '_' + str(ID)
         self.subset_basis = efvars.full_scattering_basis[subset_ids]
         self.subset_size = len(subset_ids)
 
@@ -567,31 +601,41 @@ class simulated_basis(object):
         efvars = self.efvars
         self.logfile = os.path.join(
             efvars.log_folder,
-            mvars.runname+'_Rank'+str(rank)+"_BayesMC.log")
+            mvars.runname + '_Rank' + str(rank) + "_BayesMC.log")
         os.system('echo \"Running on sub-basis: ' +
-                  str(self.subset_members)+'\" >> '+self.logfile)
-        # The posterior array has form [id_1,...,id_n,SAXSchi^2,AUXchi^2,Likelihood]
+                  str(self.subset_members) + '\" >> ' + self.logfile)
+        # The posterior array has form
+        # [id_1,...,id_n,SAXSchi^2,AUXchi^2,Likelihood]
         if self.subset_size == 1:
             self.ensemble_I = np.copy(self.subset_basis[0])
             if efvars.include_second_dimension:
                 self.ensemble_aux = np.copy(self.subset_extra[0])
             self.Chi2()
-            self.max_likelihood = self.Likelihood()
-            if not mvars.use_bic:
+            self.likelihood = self.Likelihood()
+            if mvars.use_aic:
                 self.AIC()
-            else:
+            elif mvars.use_bic:
                 self.BIC()
+            elif mvars.use_dic:
+                self.DIC()
+            #elif (mvars.use_waic1 or mvars.use_waic2):
+            #    self.WAIC()
         else:
             self.posterior_array = np.zeros((
                 mvars.number_of_MCs,
                 mvars.max_iterations,
-                self.subset_size+3
+                self.subset_size + 3
             ), dtype=float)
+            #if (mvars.use_waic1 or mvars.use_waic2):
+            #    self.likelihood_array = np.zeros((
+            #        mvars.number_of_MCs,
+            #        mvars.max_iterations,
+            #        efvars.num_points), dtype=float)
             for self.run in range(mvars.number_of_MCs):
                 os.system('echo \"Beginning run ' +
-                          str(self.run)+'\" >> '+self.logfile)
+                          str(self.run) + '\" >> ' + self.logfile)
                 self.weights = np.random.random(size=self.subset_size)
-                self.weights = self.weights/float(np.sum(self.weights))
+                self.weights = self.weights / float(np.sum(self.weights))
                 self.ensemble_I = np.dot(self.weights, self.subset_basis)
                 if efvars.include_second_dimension:
                     self.ensemble_aux = np.dot(self.weights, self.subset_extra)
@@ -606,6 +650,8 @@ class simulated_basis(object):
                 self.likelihood = self.Likelihood()
                 self.posterior_array[self.run, 0,
                                      self.subset_size + 2] = self.likelihood
+                #if (mvars.use_waic1 or mvars.use_waic2):
+                #    self.likelihood_array[self.run, 0] = self.like_per_point
 
                 self.iteration = 1
 
@@ -614,10 +660,14 @@ class simulated_basis(object):
                     self.iteration += 1
 
             self.WeightsFromPosterior()
-            if not mvars.use_bic:
-                self.AIC()
-            else:
+            if mvars.use_bic:
                 self.BIC()
+            elif mvars.use_aic:
+                self.AIC()
+            elif mvars.use_dic:
+                self.DIC()
+            #elif (mvars.use_waic2 or mvars.use_waic1):
+            #    self.WAIC()
             if mvars.number_of_MCs > 1:
                 self.Convergence()
             self.Epilogue()
@@ -643,13 +693,13 @@ class simulated_basis(object):
                                                      size=1)
                 if ((self.weights[increment_member] + delta) >= 0.0):
                     self.weights[increment_member] += delta
-                    self.weights = self.weights/np.sum(self.weights)
+                    self.weights = self.weights / np.sum(self.weights)
                     proceed = True
         else:
             deltas = np.random.normal(scale=mvars.sigma,
                                       size=self.subset_size)
             self.weights = self.weights + deltas
-            self.weights = self.weights/np.sum(self.weights)
+            self.weights = self.weights / np.sum(self.weights)
         zeroers = np.where(self.weights < mvars.zeroing_threshold)[0]
         self.weights[zeroers] = 0.0
         if np.sum(self.weights) == 0:
@@ -657,7 +707,7 @@ class simulated_basis(object):
                       + ' Try reducing the \'sigma\' or'
                       + ' \'zeroing_threshold\' parameters\"'
                       + ' >> ' + self.logfile)
-        self.weights = self.weights/np.sum(self.weights)
+        self.weights = self.weights / np.sum(self.weights)
 
         self.ensemble_I = np.dot(self.weights, self.subset_basis)
         if efvars.include_second_dimension:
@@ -666,7 +716,7 @@ class simulated_basis(object):
         self.likelihood = self.Likelihood()
         if self.prev_likelihood == 0.0:
             self.prev_likelihood = 1e-8
-        acceptance_ratio = self.likelihood/self.prev_likelihood
+        acceptance_ratio = self.likelihood / self.prev_likelihood
         draw = np.random.uniform(low=0.0, high=1.0)
         if not ((acceptance_ratio >= 1.0) or (draw < acceptance_ratio)):
             self.weights = np.copy(self.prev_weights)
@@ -685,6 +735,9 @@ class simulated_basis(object):
                              self.subset_size + 1] = self.aux_chi2
         self.posterior_array[self.run, self.iteration,
                              self.subset_size + 2] = self.likelihood
+        #if (mvars.use_waic1 or mvars.use_waic2):
+        #    self.likelihood_array[
+        #        self.run, self.iteration] = self.like_per_point
 
     def Chi2(self):
         mvars = self.mvars
@@ -702,66 +755,168 @@ class simulated_basis(object):
             chi = np.median(chi_array)
             chi_idx = np.where(chi_array == chi)[0][0]
             c = c_array[0, chi_idx]
-            self.ensemble_I = c*self.ensemble_I
+            self.ensemble_I = c * self.ensemble_I
             self.sas_chi2 = chi
+
+            #if (mvars.use_waic1 or mvars.use_waic2):
+            #    shan_ensemble_I = self.ensemble_I[efvars.shannon_samples]
+            #    self.sas_chi_per_point = np.median(np.power(np.divide(
+            #        np.subtract(efvars.samples_I, shan_ensemble_I),
+            #        efvars.samples_ERR), 2), axis=1)
+
         else:
             sum1 = np.sum(np.divide(np.multiply(efvars.samples_I,
                                                 self.ensemble_I), np.power(efvars.samples_ERR, 2)))
             sum2 = np.sum(
                 np.power(np.divide(self.ensemble_I, efvars.samples_ERR), 2))
             c = np.divide(sum1, sum2)
-            self.ensemble_I = c*self.ensemble_I
+            self.ensemble_I = c * self.ensemble_I
             chi = np.sum(np.power(np.divide(np.subtract(
                 efvars.samples_I, self.ensemble_I), efvars.samples_ERR), 2))
+            if mvars.num_q > 0:
+                scale_factor = float(mvars.num_q) / len(efvars.samples_I)
+                chi = scale_factor * chi
+
             self.sas_chi2 = chi
+            #if (mvars.use_waic1 or mvars.use_waic2):
+            #    self.sas_chi_per_point = np.power(np.divide(
+            #        np.subtract(efvars.samples_I, self.ensemble_I),
+            #        efvars.samples_ERR), 2)
+            #    if mvars.num_q > 0:
+            #        self.sas_chi_per_point = scale_factor * self.sas_chi_per_point
 
         if efvars.include_second_dimension:
             chi2 = np.sum(np.power(np.divide(np.subtract(
                 efvars.aux_data, self.ensemble_aux), efvars.aux_error), 2))
             self.aux_chi2 = chi2
             self.total_chi2 = self.sas_chi2 + self.aux_chi2
+            #if (mvars.use_waic1 or mvars.use_waic2):
+            #self.aux_chi_per_point = np.power(np.divide(
+            #        np.subtract(efvars.aux_data, self.ensemble_aux),
+            #        efvars.aux_error), 2)
+            #    self.chi_per_point = np.append(
+            #        self.sas_chi_per_point, self.aux_chi_per_point)
         else:
             self.total_chi2 = self.sas_chi2
+            #if (mvars.use_waic2 or mvars.use_waic1):
+            #    self.chi_per_point = np.copy(self.sas_chi_per_point)
 
     def Likelihood(self):
-
-        likelihood = math.exp(-self.total_chi2/2.0)
+        mvars = self.mvars
+        efvars= self.efvars
+        #likelihood = math.exp(-self.total_chi2 / 2.0)
+        self.SASLikelihood()
+        if efvars.include_second_dimension:
+            self.AUXLikelihood()
+        else:
+            self.aux_like = 1
+        likelihood = self.sas_like * self.aux_like
+        
+        #if (mvars.use_waic1 or mvars.use_waic2):
+        #    self.like_per_point = np.exp(-self.chi_per_point / 2.0)
 
         return likelihood
+
+    def SASLikelihood(self):
+        self.sas_like = math.exp(-self.sas_chi2 / 2.0)
+    
+    def AUXLikelihood(self):
+        self.aux_like = math.exp(-self.aux_chi2 / 2.0)
 
     def AIC(self):
 
         if self.subset_size > 1:
             self.maxlike = np.max(self.posterior_array[:, :, -1])
-            self.aic = 2*(self.subset_size-1) \
+            self.ic  = 2 * (self.subset_size - 1) \
                 - 2 * np.log(self.maxlike)
         else:
-            self.aic = self.total_chi2
+            self.ic = -2*np.log(self.likelihood)
         return
 
     def BIC(self):
         efvars = self.efvars
         if self.subset_size > 1:
             self.maxlike = np.max(self.posterior_array[:, :, -1])
-            self.aic = ((self.subset_size - 1) * np.log(efvars.num_points))\
+            self.ic  = ((self.subset_size - 1) * np.log(efvars.num_points))\
                 - 2 * np.log(self.maxlike)
         else:
-            self.aic = self.total_chi2
+            self.ic = -2*np.log(self.likelihood)
         return
+
+    def WAIC(self):
+        mvars = self.mvars
+
+        #WAIC = -2 * (LPPD - P)
+        if self.subset_size > 1:
+            #WAIC = -2 * (LPPD - P)
+            # Calculate the LPPD: Log Posterior Predictive Density
+            for idx in range(mvars.number_of_MCs):
+                this_run = self.likelihood_array[idx, mvars.posterior_burn:]
+                try:
+                    all_runs = np.vstack((all_runs, this_run))
+                except:
+                    all_runs = np.copy(this_run)
+
+            LPPD = np.sum(np.log(np.mean(self.likelihood_array, axis=0)))
+
+            # Calculate LPPD still...
+
+            # Calculate P, there are two different ways
+            # P1
+            if mvars.use_waic1:
+                c1 = np.log(np.mean(self.likelihood_array, axis=0))
+                c2 = np.mean(np.log(self.likelihood_array), axis=0)
+                P = np.sum(2 * (c1 - c2))
+            elif mvars.use_waic2:
+                # P2
+                P = np.sum(np.var(np.log(self.likelihood_array), axis=0))
+
+            self.ic = -2 * (LPPD - P)
+            print(self.subset_members, LPPD, P)
+        else:
+            # If subsize = 1, no need to average over posterior (no variance
+            # either)
+            self.ic = -2 * np.sum(np.log(self.like_per_point))
+
+    def DIC(self):
+        mvars = self.mvars
+        efvars= self.efvars
+
+        if self.subset_size > 1:
+            #DIC = -2*(L-P)
+            # Calculate L, the log-likelihood of posterior avg fit
+
+            L = np.log(self.Likelihood())
+
+            # Calculate P, effective parameter number
+            #P = 2*[L-(1/S)*sum(log[p(y|theta_s)])]
+            # OR
+            #P = 2*[L-avg(log(posterior(y|theta_s)))]
+            flattened_post = self.posterior_array[
+                :, mvars.posterior_burn:, -1].flatten()
+            log_flattened = np.log(flattened_post)
+            P = 2 * (L - np.average(log_flattened))
+
+            self.ic = -2 * (L - P)
+
+        else:
+            self.ic = -2*np.log(self.likelihood)
+
+        pass
 
     def WeightsFromPosterior(self):
         mvars = self.mvars
         efvars = self.efvars
         log = open(self.logfile, 'a')
 
-        log.write('Posterior Array:\n'+str(self.posterior_array)+'\n')
+        log.write('Posterior Array:\n' + str(self.posterior_array) + '\n')
         self.mean_weights = np.average(
             self.posterior_array[:, mvars.posterior_burn:, :self.subset_size], axis=1)
         self.mean_weights = self.mean_weights / \
             np.sum(self.mean_weights, axis=1, keepdims=True)
-        log.write('mean_weights: '+str(self.mean_weights)+'\n')
+        log.write('mean_weights: ' + str(self.mean_weights) + '\n')
         self.total_mean_weights = np.average(self.mean_weights, axis=0)
-        log.write('total_mean_weights: '+str(self.total_mean_weights)+'\n')
+        log.write('total_mean_weights: ' + str(self.total_mean_weights) + '\n')
         self.weights_std = np.zeros(
             np.shape(self.total_mean_weights), dtype=float)
         for idx in range(len(self.weights_std)):
@@ -778,7 +933,7 @@ class simulated_basis(object):
         mvars = self.mvars
         efvars = self.efvars
         del self.subset_basis
-        if mvars.d_max > 0.0:
+        if mvars.shansamp:
             del self.ensemble_I_shan
         # Tracking the full posteriors of all the subsets is very
         # memory-intensive, so we have to delete them as we go.
@@ -801,25 +956,25 @@ class simulated_basis(object):
         self.within_variance = np.average(np.var(
             self.posterior_array[:, mvars.posterior_burn:, :self.subset_size], axis=1), axis=0)
 
-        self.between_variance = (N/(mvars.number_of_MCs - 1))*np.sum(
+        self.between_variance = (N / (mvars.number_of_MCs - 1)) * np.sum(
             np.power(np.subtract(self.mean_weights, self.total_mean_weights), 2), axis=0)
 
-        self.pooled_var = ((N-1)/N)*self.within_variance + (
-            (mvars.number_of_MCs + 1)/(N*mvars.number_of_MCs))*self.between_variance
+        self.pooled_var = ((N - 1) / N) * self.within_variance + (
+            (mvars.number_of_MCs + 1) / (N * mvars.number_of_MCs)) * self.between_variance
 
         self.PSRF = np.divide(self.pooled_var, self.within_variance)
         self.Rc = np.sqrt(
-            ((self.subset_size + 2.0)/self.subset_size)*self.PSRF)
+            ((self.subset_size + 2.0) / self.subset_size) * self.PSRF)
 
-        log.write('PSRF: '+str(self.PSRF)+'\n')
-        log.write('Rc: '+str(self.Rc)+'\n')
+        log.write('PSRF: ' + str(self.PSRF) + '\n')
+        log.write('Rc: ' + str(self.Rc) + '\n')
         log.close()
         del self.PSRF
         del self.Rc
         return
-########################################################################################
+##########################################################################
 
-##### Bokeh Plotting Object  ###########################################################
+##### Bokeh Plotting Object  #############################################
 
 
 class Bokeh_and_Save(object):
@@ -852,20 +1007,20 @@ class Bokeh_and_Save(object):
                     aux_res_script, div = components(self.AUXresPlot)
             except:
                 os.system('echo "Unable to create Bokeh components"'
-                          + ' >> '+self.logfile)
+                          + ' >> ' + self.logfile)
 
             sas_pickle = os.path.join(efvars.pickle_folder,
-                                      mvars.runname+'_SAS_bokeh.p')
+                                      mvars.runname + '_SAS_bokeh.p')
             res_pickle = os.path.join(efvars.pickle_folder,
-                                      mvars.runname+'_SASres_bokeh.p')
+                                      mvars.runname + '_SASres_bokeh.p')
             pickle.dump(sas_script, open(sas_pickle, 'wb'))
             pickle.dump(res_script, open(res_pickle, 'wb'))
 
             if efvars.include_second_dimension:
                 aux_pickle = os.path.join(efvars.pickle_folder,
-                                          mvars.runname+'_AUX_bokeh.p')
+                                          mvars.runname + '_AUX_bokeh.p')
                 aux_res_pickle = os.path.join(efvars.pickle_folder,
-                                              mvars.runname+'_AUXres_bokeh.p')
+                                              mvars.runname + '_AUXres_bokeh.p')
                 pickle.dump(aux_script, open(aux_pickle, 'wb'))
                 pickle.dump(aux_res_script, open(aux_res_pickle, 'wb'))
 
@@ -891,7 +1046,7 @@ class Bokeh_and_Save(object):
 
         for name in names:
             PopDict[name] = np.array([], dtype=float)
-            PopDict[name+'STD'] = np.array([], dtype=float)
+            PopDict[name + 'STD'] = np.array([], dtype=float)
 
         if rank == 0:
             keys = [str(key) for key in efvars.subspace_dict]
@@ -904,14 +1059,14 @@ class Bokeh_and_Save(object):
             mykeys = comm.recv(source=0)
         for key in mykeys:
             model = efvars.subspace_dict[key]
-            ICarray = np.append(ICarray, model.aic)
+            ICarray = np.append(ICarray, model.ic)
             ChiArray = np.append(ChiArray,
-                                 model.total_chi2/efvars.num_points)
+                                 model.total_chi2 / efvars.num_points)
             SASchiArray = np.append(SASchiArray,
-                                    model.sas_chi2/efvars.num_q)
+                                    model.sas_chi2 / efvars.num_q)
             if efvars.include_second_dimension:
                 AUXchiArray = np.append(AUXchiArray,
-                                        model.aux_chi2/efvars.num_aux)
+                                        model.aux_chi2 / efvars.num_aux)
             else:
                 AUXchiArray = np.append(AUXchiArray, 0.000)
 
@@ -932,17 +1087,17 @@ class Bokeh_and_Save(object):
                 for member in range(model.subset_size):
                     profile = names[model.subset_members[member]]
                     MemberString += profile
-                    if (member+1) != model.subset_size:
+                    if (member + 1) != model.subset_size:
                         MemberString += ','
 
                     try:
                         PopDict[profile] = np.append(PopDict[profile],
                                                      model.total_mean_weights[member])
-                        PopDict[profile+'STD'] = np.append(PopDict[profile+'STD'],
-                                                           model.weights_std[member])
+                        PopDict[profile + 'STD'] = np.append(PopDict[profile + 'STD'],
+                                                             model.weights_std[member])
                     except:
                         PopDict[profile] = model.total_mean_weights[member]
-                        PopDict[profile+'STD'] = model.weights_std[member]
+                        PopDict[profile + 'STD'] = model.weights_std[member]
                     whichProfile = np.where(nameChecklist == profile)[0][0]
                     nameChecklist = np.delete(nameChecklist,
                                               np.where(
@@ -955,10 +1110,10 @@ class Bokeh_and_Save(object):
                 try:
                     PopDict[profile] = np.append(PopDict[profile], 1.000)
                     PopDict[profile +
-                            'STD'] = np.append(PopDict[profile+'STD'], 0.000)
+                            'STD'] = np.append(PopDict[profile + 'STD'], 0.000)
                 except:
                     PopDict[profile] = 1.0
-                    PopDict[profile+'STD'] = 0.0
+                    PopDict[profile + 'STD'] = 0.0
                 nameChecklist = np.delete(nameChecklist,
                                           np.where(
                                               nameChecklist == profile)[0][0]
@@ -967,10 +1122,10 @@ class Bokeh_and_Save(object):
                 try:
                     PopDict[nonmember] = np.append(PopDict[nonmember], 0.000)
                     PopDict[nonmember +
-                            'STD'] = np.append(PopDict[nonmember+'STD'], 0.000)
+                            'STD'] = np.append(PopDict[nonmember + 'STD'], 0.000)
                 except:
                     PopDict[nonmember] = 0.00
-                    PopDict[nonmember+'STD'] = 0.00
+                    PopDict[nonmember + 'STD'] = 0.00
 
         if rank == 0:
             for thread in range(1, size):
@@ -995,8 +1150,8 @@ class Bokeh_and_Save(object):
                 for name in names:
                     PopDict[name] = np.append(PopDict[name],
                                               RecvDict['Pops'][name])
-                    PopDict[name+'STD'] = np.append(PopDict[name+'STD'],
-                                                    RecvDict['Pops'][name+'STD'])
+                    PopDict[name + 'STD'] = np.append(PopDict[name + 'STD'],
+                                                      RecvDict['Pops'][name + 'STD'])
 
             sort_idx = np.argsort(ICarray)
             self.ICarray = ICarray[sort_idx]
@@ -1013,7 +1168,7 @@ class Bokeh_and_Save(object):
                 self.PopDict[ID] = self.PopDict[ID][sort_idx]
 
             minIC = self.ICarray[0]
-            self.RelPerform = np.exp((minIC-self.ICarray)/2.0)
+            self.RelPerform = np.exp((minIC - self.ICarray) / 2.0)
 
             # Round values for printing
             self.RelPerform = np.around(self.RelPerform, decimals=2)
@@ -1024,12 +1179,12 @@ class Bokeh_and_Save(object):
             for name in names:
                 self.PopDict[name] = np.around(self.PopDict[name],
                                                decimals=2)
-                self.PopDict[name+'STD'] = np.around(self.PopDict[name+'STD'],
-                                                     decimals=2)
-                self.PopDict[name+'_hiErr'] = self.PopDict[name]\
-                    + self.PopDict[name+'STD']
-                self.PopDict[name+'_loErr'] = self.PopDict[name]\
-                    - self.PopDict[name+'STD']
+                self.PopDict[name + 'STD'] = np.around(self.PopDict[name + 'STD'],
+                                                       decimals=2)
+                self.PopDict[name + '_hiErr'] = self.PopDict[name]\
+                    + self.PopDict[name + 'STD']
+                self.PopDict[name + '_loErr'] = self.PopDict[name]\
+                    - self.PopDict[name + 'STD']
 
             self.MakeColumnDataSources()
 
@@ -1110,22 +1265,22 @@ class Bokeh_and_Save(object):
             top10aux['loErr'] = efvars.aux_data - efvars.aux_error
 
         for idx in range(len(top10dat['IC'])):  # Don't assume 10 models
-            top10plots['model'+str(idx)] = np.copy(self.SASProf[idx])
-            top10plots['model'+str(idx)+'res'] = self.SASProf[idx]\
+            top10plots['model' + str(idx)] = np.copy(self.SASProf[idx])
+            top10plots['model' + str(idx) + 'res'] = self.SASProf[idx]\
                 - efvars.I
             if efvars.include_second_dimension:
-                top10aux['model'+str(idx)] = np.copy(self.AUXProf[idx])
-                top10aux['model'+str(idx)+'res'] = self.AUXProf[idx]\
+                top10aux['model' + str(idx)] = np.copy(self.AUXProf[idx])
+                top10aux['model' + str(idx) + 'res'] = self.AUXProf[idx]\
                     - efvars.aux_data
 
         for idx in range(len(names)):  # Plots include individual members
             oneSAS = efvars.full_scattering_basis[idx]
             top10plots[names[idx]] = oneSAS
-            top10plots[names[idx]+'res'] = oneSAS - efvars.I
+            top10plots[names[idx] + 'res'] = oneSAS - efvars.I
             if efvars.include_second_dimension:
                 oneAUX = efvars.full_extra_basis[idx]
                 top10aux[auxnames[idx]] = oneAUX
-                top10aux[auxnames[idx]+'res'] = oneAUX - efvars.aux_data
+                top10aux[auxnames[idx] + 'res'] = oneAUX - efvars.aux_data
 
         self.top10datCDS = ColumnDataSource(data=top10dat)
         self.top10plotCDS = ColumnDataSource(data=top10plots)
@@ -1139,7 +1294,7 @@ class Bokeh_and_Save(object):
         self.basis_sizes = []
         Nmodels = len(self.SubsizeArray)
         PerfBins = np.arange(0, 1.01, 0.05)
-        for subsize in range(1, maxsub+1):
+        for subsize in range(1, maxsub + 1):
             subMembers = np.where(self.SubsizeArray == subsize)[0]
             subPerfs = self.RelPerform[subMembers]
             try:
@@ -1173,13 +1328,13 @@ class Bokeh_and_Save(object):
 
         TabTitle = 'Best Model'
         SAStitle = 'Scattering Profile, Best Model vs Experiment'\
-                   + ' (Chi^2 = '+str(self.SASchiArray[0])+')'
+                   + ' (Chi^2 = ' + str(self.SASchiArray[0]) + ')'
         SASxLabel = 'q'
         SASyLabel = 'I(q)'
         REStitle = 'Best Model, Scattering Residuals'
         if efvars.include_second_dimension:
             AUXtitle = 'Auxiliary Profile, Best Model vs Experiment'\
-                + ' (Chi^2 = '+str(self.AUXchiArray[0])+')'
+                + ' (Chi^2 = ' + str(self.AUXchiArray[0]) + ')'
             AUXxLabel = 'Auxiliary Measurement'
             AUXyLabel = 'Measurement Value'
             AUXresTitle = 'Best Model, Auxiliary Residuals'
@@ -1211,10 +1366,10 @@ class Bokeh_and_Save(object):
             AUXplot.xaxis.ticker = np.arange(efvars.num_aux)
             AUXresPlot.xaxis.ticker = np.arange(efvars.num_aux)
 
-            AUXlowY = 0.9*np.min([np.min(self.bestauxCDS.data['loErr']),
-                                  np.min(self.bestauxCDS.data['model'])])
-            AUXhighY = 1.1*np.max([np.max(self.bestauxCDS.data['hiErr']),
-                                   np.min(self.bestauxCDS.data['model'])])
+            AUXlowY = 0.9 * np.min([np.min(self.bestauxCDS.data['loErr']),
+                                    np.min(self.bestauxCDS.data['model'])])
+            AUXhighY = 1.1 * np.max([np.max(self.bestauxCDS.data['hiErr']),
+                                     np.min(self.bestauxCDS.data['model'])])
             AUXplot.y_range = Range1d(AUXlowY, AUXhighY)
 
             AUXplot.add_layout(Whisker(source=self.bestauxCDS, base='x',
@@ -1310,14 +1465,14 @@ class Bokeh_and_Save(object):
             maxIndivid = np.max([self.top10auxCDS.data[key] for key in
                                  auxnames])
 
-            minModel = np.min([self.top10auxCDS.data['model'+str(idx)]
+            minModel = np.min([self.top10auxCDS.data['model' + str(idx)]
                                for idx in range(NumModels)])
-            maxModel = np.max([self.top10auxCDS.data['model'+str(idx)]
+            maxModel = np.max([self.top10auxCDS.data['model' + str(idx)]
                                for idx in range(NumModels)])
-            AUXlowY = 0.9*np.min([np.min(self.top10auxCDS.data['loErr']),
-                                  minModel, minIndivid])
-            AUXhighY = 1.1*np.max([np.max(self.top10auxCDS.data['hiErr']),
-                                   maxModel, maxIndivid])
+            AUXlowY = 0.9 * np.min([np.min(self.top10auxCDS.data['loErr']),
+                                    minModel, minIndivid])
+            AUXhighY = 1.1 * np.max([np.max(self.top10auxCDS.data['hiErr']),
+                                     maxModel, maxIndivid])
             AUXplot.y_range = Range1d(AUXlowY, AUXhighY)
 
         SASplot = figure(title=SAStitle, x_axis_label=SASxLabel,
@@ -1333,7 +1488,7 @@ class Bokeh_and_Save(object):
 
         ######### JS Callback for Plotted Model Selection ############
         numModels = len(self.top10datCDS.data['Chi'])
-        dropOptions = ['model'+str(idx) for idx in range(numModels)]
+        dropOptions = ['model' + str(idx) for idx in range(numModels)]
         dropSelect = Select(title='Selected Model:',
                             options=dropOptions, value=dropOptions[0])
 
@@ -1395,12 +1550,12 @@ class Bokeh_and_Save(object):
         colors = d3['Category10'][10]
         styles = ['dashed', 'dotted', 'dotdash', 'dashdot']
         for idx in range(len(names)):
-            line_idx = (idx/len(colors)) % 4
+            line_idx = (idx / len(colors)) % 4
             key = names[idx]
             line = SASplot.line(x='q', y=key, line_color=colors[idx % 10],
                                 line_width=4, line_dash=styles[line_idx],
                                 source=self.top10plotCDS)
-            rline = resPlot.line(x='q', y=key+'res',
+            rline = resPlot.line(x='q', y=key + 'res',
                                    line_color=colors[idx % 10],
                                    line_dash=styles[line_idx],
                                    source=self.top10plotCDS)
@@ -1419,7 +1574,7 @@ class Bokeh_and_Save(object):
                                           line_color='black',
                                           size=12, line_width=3,
                                           source=self.top10auxCDS)
-                    rscat = AUXresPlot.circle(x='x', y=auxkey+'res',
+                    rscat = AUXresPlot.circle(x='x', y=auxkey + 'res',
                                                 color=colors[idx],
                                                 line_color='black',
                                                 line_width=3, size=12,
@@ -1430,7 +1585,7 @@ class Bokeh_and_Save(object):
                                           line_color=colors[idx % 10],
                                           size=12, line_width=3,
                                           source=self.top10auxCDS)
-                    rscat = AUXresPlot.circle(x='x', y=auxkey+'res',
+                    rscat = AUXresPlot.circle(x='x', y=auxkey + 'res',
                                                 fill_color='black',
                                                 line_color=colors[idx % 10],
                                                 line_width=3, size=12,
@@ -1442,7 +1597,7 @@ class Bokeh_and_Save(object):
                                           line_color=colors[idx2],
                                           size=12, line_width=3,
                                           source=self.top10auxCDS)
-                    rscat = AUXresPlot.circle(x='x', y=auxkey+'res',
+                    rscat = AUXresPlot.circle(x='x', y=auxkey + 'res',
                                                 fill_color=colors[idx],
                                                 line_color=colors[idx2],
                                                 line_width=3, size=12,
@@ -1506,8 +1661,14 @@ class Bokeh_and_Save(object):
 
         if mvars.use_bic:
             IClabel = 'BIC'
-        else:
+        elif mvars.use_aic:
             IClabel = 'AIC'
+        elif mvars.use_dic:
+            IClabel = 'DIC'
+        #elif (mvars.use_waic1 or mvars.use_waic2):
+        #    IClabel = 'WAIC'
+        else:
+            IClabel = 'IC'
 
         ##### Rel Peform Histogram ###############################
         histPlot = figure(plot_height=800, plot_width=800, tools=Tools,
@@ -1515,7 +1676,10 @@ class Bokeh_and_Save(object):
                           x_range=(0, 1.0), y_range=(0, 30.0),
                           x_axis_label='Relative Model Performance',
                           y_axis_label='Number of Models')
-        colors = d3['Category20c'][len(self.basis_sizes)]
+        if len(self.basis_sizes) > 2:
+            colors = d3['Category20c'][len(self.basis_sizes)]
+        else:
+            colors = d3['Category20c'][3][:-1]
         legendItems = [value(x) for x in self.basis_sizes]
         renderer = histPlot.vbar_stack(self.basis_sizes,
                                        x='Bins', width=0.05,
@@ -1557,15 +1721,15 @@ class Bokeh_and_Save(object):
         for idx in range(Nprof):
             tickdict[str(idx)] = names[idx]
         popFig.xaxis.major_label_overrides = tickdict
-        popFig.xaxis.major_label_orientation = math.pi/4
+        popFig.xaxis.major_label_orientation = math.pi / 4
 
         nonselect = VBar(fill_alpha=0.0, line_alpha=0.0)
         for nameIDX in range(Nprof):
             profName = names[nameIDX]
             popglyph = VBar(x=nameIDX, top=profName, width=0.5,
                             line_width=0.0, line_alpha=0.0)
-            eglyph = VBar(x=nameIDX, top=profName+'_hiErr',
-                          bottom=profName+'_loErr', width=0.1,
+            eglyph = VBar(x=nameIDX, top=profName + '_hiErr',
+                          bottom=profName + '_loErr', width=0.1,
                           fill_color='black', line_color='black')
             renderer = popFig.add_glyph(self.FullTableCDS, popglyph)
             erenderer = popFig.add_glyph(self.FullTableCDS, eglyph)
@@ -1591,7 +1755,7 @@ class Bokeh_and_Save(object):
         if rank == 0:
             allfile = open(os.path.join(
                            efvars.output_folder,
-                           mvars.runname+'_all_models.dat'),
+                           mvars.runname + '_all_models.dat'),
                            'w')
             allfile.write('#Relative Performance,')
             if mvars.use_bic:
@@ -1604,28 +1768,29 @@ class Bokeh_and_Save(object):
                 allfile.write('model chi^2,')
             for idx in range(len(names)):
                 name = names[idx]
-                allfile.write(name+' weight,'+name+' stdev,')
+                allfile.write(name + ' weight,' + name + ' stdev,')
             allfile.write('\n')
 
             for model in range(len(self.FullTableCDS.data['IC'])):
                 modPerf = self.FullTableCDS.data['RelPerf'][model]
                 modIC = self.FullTableCDS.data['IC'][model]
                 modChi = self.FullTableCDS.data['Chi'][model]
-                allfile.write(str(modPerf)+','+str(modIC)+','+str(modChi)+',')
+                allfile.write(str(modPerf) + ',' + str(modIC) +
+                              ',' + str(modChi) + ',')
                 if efvars.include_second_dimension:
                     modSAS = self.FullTableCDS.data['SASchi'][model]
                     modAUX = self.FullTableCDS.data['AUXchi'][model]
-                    allfile.write(str(modSAS)+','+str(modAUX)+',')
+                    allfile.write(str(modSAS) + ',' + str(modAUX) + ',')
 
                 for idx in range(len(names)):
                     name = names[idx]
                     pop = self.FullTableCDS.data[name][model]
-                    std = self.FullTableCDS.data[name+'STD'][model]
-                    allfile.write(str(pop)+','+str(std)+',')
+                    std = self.FullTableCDS.data[name + 'STD'][model]
+                    allfile.write(str(pop) + ',' + str(std) + ',')
                 allfile.write('\n')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     ##### Command Line Parsing #####
     '''
     What follows below is the command-line parsing from the main
@@ -1634,9 +1799,9 @@ if __name__=='__main__':
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument("-mpick", dest='mpick', type=str,
-                    help='Pickled module_variables() object.')
+                        help='Pickled module_variables() object.')
     parser.add_argument("-efpick", dest='efpick', type=str,
-                    help='Pickled ensemble_fitting_variables() object.')
+                        help='Pickled ensemble_fitting_variables() object.')
     args = parser.parse_args()
 
     reweighting = ensemble_routine()
